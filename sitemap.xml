@@ -1,20 +1,15 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-
   <url>
     <loc>https://elisium.lol/</loc>
   </url>
-
   <url>
     <loc>https://elisium.lol/premium.html</loc>
   </url>
-
   <url>
     <loc>https://elisium.lol/privacy.html</loc>
   </url>
-
   <url>
     <loc>https://elisium.lol/terms.html</loc>
   </url>
-
 </urlset>
