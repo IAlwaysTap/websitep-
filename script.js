@@ -131,7 +131,7 @@ document.querySelectorAll('.feature-card, .discord-card').forEach(card => {
 
 // Copy script function
 function copyScript() {
-  const scriptText = 'loadstring(game:HttpGet("https://raw.githubusercontent.com/IAlwaysTap/Elisium-Free-script/refs/heads/main/Elisium.lol%20Free%20Script.txt"))()';
+  const scriptText = 'loadstring(game:HttpGet("https://api.getpolsec.com/scripts/hosted/06fced667fcef9952691b90e3814620a189da8ea057037ae89f8acbfc37bbf51.lua"))()';
 
   navigator.clipboard.writeText(scriptText).then(() => {
     const btn = document.querySelector('.btn-copy');
