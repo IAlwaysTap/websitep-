@@ -40,11 +40,12 @@ body {
   top: 0;
   left: 0;
   right: 0;
-  background: rgba(0, 0, 0, 0.95);
+  background: transparent;
   backdrop-filter: blur(10px);
   padding: 20px 0;
   z-index: 1000;
-  border-bottom: 1px solid var(--border-color);
+  border-bottom: 1px solid transparent;
+  transition: all 0.3s ease;
 }
 
 .navbar .container {
@@ -141,7 +142,18 @@ body {
   font-size: 14px;
   font-weight: 500;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+.btn:hover {
+  transform: translateY(-4px) scale(1.02);
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.3);
+}
+
+.btn:active {
+  transform: translateY(-2px) scale(0.98);
 }
 
 .btn-primary {
@@ -151,8 +163,6 @@ body {
 
 .btn-primary:hover {
   background: #e5e5e5;
-  transform: translateY(-2px);
-  box-shadow: 0 8px 20px rgba(255, 255, 255, 0.2);
 }
 
 .btn-secondary {
@@ -174,8 +184,6 @@ body {
 
 .btn-premium:hover {
   background: #e5e5e5;
-  transform: translateY(-2px);
-  box-shadow: 0 8px 20px rgba(255, 255, 255, 0.2);
 }
 
 .btn-discord {
@@ -185,8 +193,6 @@ body {
 
 .btn-discord:hover {
   background: #e5e5e5;
-  transform: translateY(-2px);
-  box-shadow: 0 8px 20px rgba(255, 255, 255, 0.2);
 }
 
 /* Sections */
@@ -403,6 +409,22 @@ body {
 
 .btn-copy:hover {
   background: #e5e5e5;
+}
+
+.ripple {
+  position: absolute;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.6);
+  transform: scale(0);
+  animation: ripple-animation 0.6s ease-out;
+  pointer-events: none;
+}
+
+@keyframes ripple-animation {
+  to {
+    transform: scale(4);
+    opacity: 0;
+  }
 }
 
 /* FAQ Section */
@@ -648,13 +670,13 @@ body {
 
 .scroll-fade {
   opacity: 0;
-  transform: translateY(20px);
-  transition: opacity 0.5s ease, transform 0.5s ease;
+  transform: translateY(30px) scale(0.95);
+  transition: opacity 0.6s ease-out, transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
 .scroll-fade.visible {
   opacity: 1;
-  transform: translateY(0);
+  transform: translateY(0) scale(1);
 }
 
 /* Responsive */
@@ -809,5 +831,327 @@ body {
   .hero {
     min-height: auto;
     padding: 120px 20px 60px;
+  }
+}
+
+/* Supported Games Section */
+.supported-games-section {
+  padding: 100px 20px;
+  background: linear-gradient(180deg, rgba(0, 0, 0, 0) 0%, rgba(88, 101, 242, 0.1) 50%, rgba(0, 0, 0, 0) 100%);
+}
+
+.games-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 20px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.game-card {
+  background: rgba(20, 20, 25, 0.8);
+  border: 1px solid rgba(88, 101, 242, 0.3);
+  border-radius: 12px;
+  padding: 32px 24px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  align-items: flex-start;
+  min-height: 140px;
+  transition: all 0.3s ease;
+  position: relative;
+}
+
+.game-card:hover {
+  border-color: rgba(88, 101, 242, 0.6);
+  background: rgba(25, 25, 30, 0.9);
+  transform: translateY(-4px);
+  box-shadow: 0 8px 24px rgba(88, 101, 242, 0.15);
+}
+
+.game-card h3 {
+  font-size: 18px;
+  font-weight: 600;
+  color: #ffffff;
+  margin-bottom: 16px;
+  line-height: 1.4;
+}
+
+.game-status {
+  background: transparent;
+  border: 1px solid rgba(88, 101, 242, 0.5);
+  color: rgba(88, 101, 242, 0.9);
+  padding: 6px 14px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: default;
+  transition: all 0.2s;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.game-status.active {
+  border-color: rgba(100, 200, 100, 0.6);
+  color: rgba(100, 200, 100, 0.9);
+  background: rgba(100, 200, 100, 0.1);
+}
+
+.game-status.soon {
+  border-color: rgba(150, 150, 150, 0.4);
+  color: rgba(150, 150, 150, 0.7);
+  background: rgba(100, 100, 100, 0.05);
+}
+
+/* Floating Discord Widget */
+.floating-discord-widget {
+  position: fixed;
+  bottom: 30px;
+  right: 30px;
+  z-index: 999;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+}
+
+.discord-widget-button {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  background: #5865f2;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #ffffff;
+  box-shadow: 0 8px 24px rgba(88, 101, 242, 0.4);
+  transition: all 0.3s ease;
+  position: relative;
+  z-index: 1001;
+}
+
+.discord-widget-button:hover {
+  background: #4752c4;
+  transform: scale(1.1);
+  box-shadow: 0 12px 32px rgba(88, 101, 242, 0.6);
+}
+
+.discord-widget-button:active {
+  transform: scale(0.95);
+}
+
+.discord-widget-button svg {
+  width: 32px;
+  height: 32px;
+}
+
+.discord-widget-panel {
+  position: absolute;
+  bottom: 80px;
+  right: 0;
+  background: #2c2f33;
+  border: 1px solid rgba(88, 101, 242, 0.4);
+  border-radius: 12px;
+  padding: 20px;
+  width: 320px;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4);
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(10px);
+  transition: all 0.3s ease;
+  z-index: 1000;
+}
+
+.discord-widget-panel.show {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+}
+
+.discord-widget-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+  border-bottom: 1px solid rgba(88, 101, 242, 0.2);
+  padding-bottom: 12px;
+}
+
+.discord-widget-header h3 {
+  font-size: 16px;
+  font-weight: 700;
+  color: #ffffff;
+  margin: 0;
+}
+
+.widget-close-btn {
+  background: none;
+  border: none;
+  color: #ffffff;
+  font-size: 24px;
+  cursor: pointer;
+  padding: 0;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.2s;
+}
+
+.widget-close-btn:hover {
+  color: #5865f2;
+}
+
+.discord-widget-content {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.discord-widget-content p {
+  color: #b9bbbe;
+  font-size: 14px;
+  line-height: 1.5;
+  margin: 0;
+}
+
+.widget-discord-link {
+  display: inline-block;
+  background: #5865f2;
+  color: #ffffff;
+  padding: 10px 16px;
+  border-radius: 6px;
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 14px;
+  text-align: center;
+  transition: all 0.2s;
+  border: none;
+}
+
+.widget-discord-link:hover {
+  background: #4752c4;
+  transform: translateY(-2px);
+}
+
+/* Responsive styles for widgets */
+@media (max-width: 768px) {
+  .floating-discord-widget {
+    bottom: 20px;
+    right: 20px;
+  }
+
+  .discord-widget-button {
+    width: 52px;
+    height: 52px;
+  }
+
+  .discord-widget-button svg {
+    width: 28px;
+    height: 28px;
+  }
+
+  .discord-widget-panel {
+    width: 280px;
+  }
+
+  .games-grid {
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  }
+}
+
+@media (max-width: 480px) {
+  .floating-discord-widget {
+    bottom: 16px;
+    right: 16px;
+  }
+
+  .discord-widget-button {
+    width: 48px;
+    height: 48px;
+  }
+
+  .discord-widget-button svg {
+    width: 24px;
+    height: 24px;
+  }
+
+  .discord-widget-panel {
+    width: 260px;
+    bottom: 70px;
+  }
+
+  .games-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Glow Effect Styles */
+.glow-container {
+  position: relative;
+}
+
+.glow-effect {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 600px;
+  height: 400px;
+  background: radial-gradient(ellipse at center, rgba(0, 150, 255, 0.3) 0%, rgba(0, 100, 200, 0.1) 30%, transparent 70%);
+  filter: blur(80px);
+  animation: glow-pulse 3s ease-in-out infinite;
+  z-index: 0;
+  pointer-events: none;
+}
+
+@keyframes glow-pulse {
+  0%, 100% {
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 0.8;
+  }
+  50% {
+    transform: translate(-50%, -50%) scale(1.1);
+    opacity: 1;
+  }
+}
+
+.glow-title {
+  position: relative;
+  z-index: 2;
+  font-size: 56px !important;
+}
+
+.white-text {
+  color: #ffffff;
+  text-shadow: 0 0 30px rgba(255, 255, 255, 0.8), 0 0 60px rgba(255, 255, 255, 0.5);
+  animation: textGlow 2s ease-in-out infinite;
+}
+
+@keyframes textGlow {
+  0%, 100% {
+    text-shadow: 0 0 30px rgba(255, 255, 255, 0.8), 0 0 60px rgba(255, 255, 255, 0.5);
+  }
+  50% {
+    text-shadow: 0 0 50px rgba(255, 255, 255, 1), 0 0 80px rgba(255, 255, 255, 0.8);
+  }
+}
+
+.highlight-glow {
+  background: linear-gradient(120deg, #00a8ff, #0066ff, #00ccff);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  filter: drop-shadow(0 0 30px rgba(0, 150, 255, 0.8));
+  text-shadow: 0 0 40px rgba(0, 180, 255, 0.6);
+  animation: mobileFade 3s ease-in-out infinite;
+}
+
+@keyframes mobileFade {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.3;
   }
 }
