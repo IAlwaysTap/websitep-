@@ -3,22 +3,18 @@
 
   <url>
     <loc>https://elisium.lol/</loc>
-    <priority>1.0</priority>
   </url>
 
   <url>
     <loc>https://elisium.lol/premium.html</loc>
-    <priority>0.8</priority>
   </url>
 
   <url>
     <loc>https://elisium.lol/privacy.html</loc>
-    <priority>0.6</priority>
   </url>
 
   <url>
     <loc>https://elisium.lol/terms.html</loc>
-    <priority>0.6</priority>
   </url>
 
 </urlset>
