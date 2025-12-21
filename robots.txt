@@ -1,4 +1,9 @@
+# Elisium Website Robots Configuration
+# Allows all search engine crawlers to index the site
+
 User-agent: *
 Allow: /
+Disallow: 
 
-Sitemap: https://elisium.lol/sitemap.xml
+# Sitemap location for search engines
+Sitemap: https://www.elisium.lol/sitemap.xml
