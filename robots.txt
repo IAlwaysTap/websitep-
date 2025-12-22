@@ -6,4 +6,4 @@ Allow: /
 Disallow: 
 
 # Sitemap location for search engines
-Sitemap: https://www.elisium.lol/sitemap.xml
+Sitemap: https://www.elisium.lol/sitemap_index.xml
