@@ -69,6 +69,7 @@
         <a href="#pricing">Pricing</a>
         <a href="#features">Premium</a>
         <a href="#free-script">Free Script</a>
+        <a href="#config-generator">Config Generator</a>
       </div>
     </div>
   </nav>
@@ -526,6 +527,132 @@
             <div class="team-name">poof</div>
             <div class="team-title">External Developer</div>
             <p class="team-description">Elisium PC Developer</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Config Generator Section -->
+  <section id="config-generator" class="config-section">
+    <div class="container">
+      <h2 class="section-title scroll-fade">Elisium Config Generator</h2>
+      <p class="section-subtitle scroll-fade">Create your custom configuration and download it as a .cfg file</p>
+      
+      <div class="config-container scroll-fade">
+        <div class="config-left">
+          <div class="config-name-box">
+            <label for="configName">Config Name:</label>
+            <input type="text" id="configName" placeholder="Enter config name" value="MyElisium">
+          </div>
+          
+          <div class="config-sections">
+            <div class="config-section-group">
+              <button class="config-section-btn" onclick="toggleConfigSection('rage')">
+                <span>Rage Aimbot</span>
+                <i class="toggle-icon">+</i>
+              </button>
+              <div id="rage-section" class="config-section-content">
+                <div class="config-toggle">
+                  <label>Rage Enabled</label>
+                  <input type="checkbox" id="rageEnabled" onchange="updatePreview()">
+                </div>
+                <div class="config-toggle">
+                  <label>Hit Part</label>
+                  <select id="hitPart" onchange="updatePreview()">
+                    <option>Head</option>
+                    <option selected>HumanoidRootPart</option>
+                    <option>Torso</option>
+                  </select>
+                </div>
+                <div class="config-input">
+                  <label>Horizontal Prediction (0-1)</label>
+                  <input type="number" id="horizPred" min="0" max="1" step="0.01" value="0.135" onchange="updatePreview()">
+                </div>
+                <div class="config-input">
+                  <label>Vertical Prediction (0-1)</label>
+                  <input type="number" id="vertPred" min="0" max="1" step="0.01" value="0.135" onchange="updatePreview()">
+                </div>
+              </div>
+            </div>
+
+            <div class="config-section-group">
+              <button class="config-section-btn" onclick="toggleConfigSection('legit')">
+                <span>Legit Aimbot</span>
+                <i class="toggle-icon">+</i>
+              </button>
+              <div id="legit-section" class="config-section-content" style="display:none;">
+                <div class="config-toggle">
+                  <label>AimAssist Enabled</label>
+                  <input type="checkbox" id="legitEnabled" onchange="updatePreview()">
+                </div>
+                <div class="config-toggle">
+                  <label>Type</label>
+                  <select id="legitType" onchange="updatePreview()">
+                    <option selected>Camera</option>
+                    <option>Mouse</option>
+                  </select>
+                </div>
+                <div class="config-input">
+                  <label>Smoothing Amount (0-10)</label>
+                  <input type="number" id="smoothing" min="0" max="10" step="0.1" value="1" onchange="updatePreview()">
+                </div>
+              </div>
+            </div>
+
+            <div class="config-section-group">
+              <button class="config-section-btn" onclick="toggleConfigSection('visuals')">
+                <span>Visuals/ESP</span>
+                <i class="toggle-icon">+</i>
+              </button>
+              <div id="visuals-section" class="config-section-content" style="display:none;">
+                <div class="config-toggle">
+                  <label>ESP Enabled</label>
+                  <input type="checkbox" id="espEnabled" onchange="updatePreview()">
+                </div>
+                <div class="config-toggle">
+                  <label>Show Boxes</label>
+                  <input type="checkbox" id="showBoxes" onchange="updatePreview()">
+                </div>
+                <div class="config-toggle">
+                  <label>Show Lines</label>
+                  <input type="checkbox" id="showLines" onchange="updatePreview()">
+                </div>
+                <div class="config-toggle">
+                  <label>Show Tracers</label>
+                  <input type="checkbox" id="showTracers" onchange="updatePreview()">
+                </div>
+              </div>
+            </div>
+
+            <div class="config-section-group">
+              <button class="config-section-btn" onclick="toggleConfigSection('gun')">
+                <span>Gun Modifications</span>
+                <i class="toggle-icon">+</i>
+              </button>
+              <div id="gun-section" class="config-section-content" style="display:none;">
+                <div class="config-toggle">
+                  <label>RapidFire</label>
+                  <input type="checkbox" id="rapidFire" onchange="updatePreview()">
+                </div>
+                <div class="config-toggle">
+                  <label>Force Hit</label>
+                  <input type="checkbox" id="forceHit" onchange="updatePreview()">
+                </div>
+                <div class="config-input">
+                  <label>Range (Default: 210)</label>
+                  <input type="number" id="gunRange" min="50" max="500" value="210" onchange="updatePreview()">
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="config-right">
+          <div class="config-preview">
+            <h3>Preview</h3>
+            <pre id="configPreview">{}</pre>
+            <button class="btn btn-download" onclick="downloadConfig()">Download .cfg File</button>
           </div>
         </div>
       </div>
