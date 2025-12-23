@@ -69,6 +69,7 @@
         <a href="#pricing">Pricing</a>
         <a href="#features">Premium</a>
         <a href="#free-script">Free Script</a>
+        <a href="#config-generator">Config</a>
       </div>
     </div>
   </nav>
@@ -527,6 +528,44 @@
             <div class="team-title">External Developer</div>
             <p class="team-description">Elisium PC Developer</p>
           </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Config Generator Section -->
+  <section id="config-generator" class="config-generator-section">
+    <div class="container">
+      <h2 class="section-title scroll-fade">Create Your Custom Config</h2>
+      <p class="section-subtitle scroll-fade">Customize every setting for your Elisium script and download your config file</p>
+      
+      <div class="config-generator-container scroll-fade">
+        <div class="config-form-wrapper">
+          <div class="config-name-input">
+            <input type="text" id="configNameInput" placeholder="Enter config name (e.g., MyAwesomeConfig)" maxlength="50">
+            <small>The file will be saved as: <span id="configFileName">MyAwesomeConfig.cfg</span></small>
+          </div>
+
+          <div class="config-tabs">
+            <button class="config-tab active" data-tab="rage">Rage Mode</button>
+            <button class="config-tab" data-tab="legit">Legit Mode</button>
+            <button class="config-tab" data-tab="visuals">Visuals</button>
+          </div>
+
+          <div class="config-sections" id="configSections">
+            <!-- Dynamically generated form sections will go here -->
+          </div>
+
+          <div class="config-actions">
+            <button class="btn btn-download" onclick="downloadConfig()">Download Config</button>
+            <button class="btn btn-reset" onclick="resetConfig()">Reset to Default</button>
+          </div>
+        </div>
+
+        <div class="config-preview">
+          <h3>Config Preview</h3>
+          <pre id="configPreview">{}</pre>
+          <button class="btn btn-copy" onclick="copyToClipboard()">Copy JSON</button>
         </div>
       </div>
     </div>
